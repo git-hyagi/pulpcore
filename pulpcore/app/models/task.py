@@ -23,6 +23,7 @@ from pulpcore.app.models.fields import EncryptedJSONField
 from pulpcore.constants import TASK_CHOICES, TASK_INCOMPLETE_STATES, TASK_STATES
 from pulpcore.exceptions import AdvisoryLockError, exception_to_dict
 from pulpcore.app.util import get_domain_pk, current_task
+from pulpcore.tasking.telemetry import store_metric
 
 _logger = logging.getLogger(__name__)
 
@@ -136,6 +137,7 @@ class Task(BaseModel, AutoAddObjPermsMixin):
         """
         return current_task.get()
 
+    @store_metric
     def set_running(self):
         """
         Set this Task to the running state, save it, and log output in warning cases.
@@ -158,6 +160,7 @@ class Task(BaseModel, AutoAddObjPermsMixin):
         with suppress(AttributeError):
             del self.error
 
+    @store_metric
     def set_completed(self):
         """
         Set this Task to the completed state, save it, and log output in warning cases.
@@ -182,6 +185,7 @@ class Task(BaseModel, AutoAddObjPermsMixin):
         with suppress(AttributeError):
             del self.error
 
+    @store_metric
     def set_failed(self, exc, tb):
         """
         Set this Task to the failed state and save it.
@@ -210,6 +214,7 @@ class Task(BaseModel, AutoAddObjPermsMixin):
         with suppress(AttributeError):
             del self.error
 
+    @store_metric
     def set_canceling(self):
         """
         Set this task to canceling from either waiting, running or canceling.

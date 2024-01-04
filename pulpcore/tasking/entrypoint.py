@@ -4,6 +4,11 @@ import os
 
 import django
 
+### REMOTE DEBUG
+#import debugpy
+#debugpy.listen(('0.0.0.0', 5678))
+#debugpy.wait_for_client()
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pulpcore.app.settings")
 
 django.setup()
@@ -39,5 +44,6 @@ def worker(pid, burst, reload):
             fp.write(str(os.getpid()))
 
     _logger.info("Starting distributed type worker")
+    _logger.info("It works!")
 
     PulpcoreWorker().run(burst=burst)
