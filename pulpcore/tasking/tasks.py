@@ -14,6 +14,8 @@ from pulpcore.app.apps import MODULE_PLUGIN_VERSIONS
 from pulpcore.app.models import Task
 from pulpcore.app.util import current_task, get_domain, get_url
 from pulpcore.constants import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
+from pulpcore.tasking.telemetry import make_measurement, PULP_OTEL_ENABLED
+from threading import Thread
 
 _logger = logging.getLogger(__name__)
 
@@ -45,9 +47,15 @@ def execute_task(task):
 
 
 def _execute_task(task):
+    task_previous_state = task.state
     # Store the task id in the context for `Task.current()`.
     current_task.set(task)
     task.set_running()
+
+    if PULP_OTEL_ENABLED:
+      metrics_thread = Thread(target=make_measurement, args=(task,task_previous_state))
+      metrics_thread.start()
+
     try:
         _logger.info(_("Starting task %s"), task.pk)
 
