@@ -22,21 +22,25 @@ def pulpcore_random_file(tmp_path):
 
 
 def _do_upload_valid_attrs(artifact_api, file, data):
-    """Upload a file with the given attributes."""
-    artifact = artifact_api.create(file, **data)
-    # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
-    assert artifact.md5 is None, "MD5 {}".format(artifact.md5)
-    read_artifact = artifact_api.read(artifact.pulp_href)
-    # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
-    assert read_artifact.md5 is None
-    for key, val in artifact.to_dict().items():
-        assert getattr(read_artifact, key) == val
-    # Delete the Artifact
-    artifact_api.delete(read_artifact.pulp_href)
-    with pytest.raises(ApiException) as e:
-        artifact_api.read(read_artifact.pulp_href)
+    def upload_valid_attrs(monitor_task, pulpcore_bindings):
+        """Upload a file with the given attributes."""
+        artifact = artifact_api.create(file, **data)
+        # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
+        assert artifact.md5 is None, "MD5 {}".format(artifact.md5)
+        read_artifact = artifact_api.read(artifact.pulp_href)
+        # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
+        assert read_artifact.md5 is None
+        for key, val in artifact.to_dict().items():
+            assert getattr(read_artifact, key) == val
+        # Delete the Artifact
+        monitor_task(
+            pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task
+        )
+        with pytest.raises(ApiException) as e:
+            artifact_api.read(read_artifact.pulp_href)
+        assert e.value.status == 404
 
-    assert e.value.status == 404
+    return upload_valid_attrs
 
 
 @pytest.mark.parallel
@@ -146,7 +150,7 @@ def test_upload_mixed_attrs(pulpcore_bindings, pulpcore_random_file):
 
 
 @pytest.mark.parallel
-def test_delete_artifact(pulpcore_bindings, pulpcore_random_file):
+def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user, monitor_task):
     """Delete an artifact, it is removed from the filesystem."""
     if settings.DEFAULT_FILE_STORAGE != "pulpcore.app.models.storage.FileSystem":
         pytest.skip("this test only works for filesystem storage")
@@ -157,7 +161,44 @@ def test_delete_artifact(pulpcore_bindings, pulpcore_random_file):
     file_exists = os.path.exists(path_to_file)
     assert file_exists
 
-    # delete
-    pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
+    # try to delete as a regular (non-admin) user
+    regular_user = gen_user()
+    with regular_user, pytest.raises(ApiException) as e:
+        pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
+    assert e.value.status == 403
+
+    # destroy artifact api is not allowed, even for admins
+    with pytest.raises(ApiException) as e:
+        pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
+    assert e.value.status == 403
+
+    # remove artifact through orphan cleanup
+    monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
     file_exists = os.path.exists(path_to_file)
     assert not file_exists
+
+
+@pytest.mark.parallel
+def test_upload_artifact_as_a_regular_user(pulpcore_bindings, gen_user, pulpcore_random_file):
+    regular_user = gen_user()
+    with regular_user, pytest.raises(ApiException) as e:
+        pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"])
+    assert e.value.status == 403
+
+
+@pytest.mark.parallel
+def test_list_and_retrieve_artifact_as_a_regular_user(
+    pulpcore_bindings, gen_user, pulpcore_random_file
+):
+    regular_user = gen_user()
+    artifact = pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"])
+
+    # check if list is not allowed
+    with regular_user, pytest.raises(ApiException) as e:
+        pulpcore_bindings.ArtifactsApi.list()
+    assert e.value.status == 403
+
+    # check if retrieve is also not allowed
+    with regular_user, pytest.raises(ApiException) as e:
+        pulpcore_bindings.ArtifactsApi.read(artifact.pulp_href)
+    assert e.value.status == 403
