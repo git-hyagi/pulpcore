@@ -20,6 +20,7 @@ from packaging.version import parse as parse_version
 from time import sleep
 from yarl import URL
 
+from pulpcore.client.pulpcore.api.artifacts_api import ArtifactsApi
 from pulpcore.tests.functional.utils import (
     SLEEP_TIME,
     TASK_TIMEOUT,
@@ -879,7 +880,7 @@ def redis_status(pulp_status):
 
 
 @pytest.fixture(scope="class")
-def add_to_cleanup(monitor_task):
+def add_to_cleanup(pulpcore_bindings, monitor_task):
     """Fixture to allow pulp objects to be deleted in reverse order after the test module."""
     obj_refs = []
 
@@ -894,7 +895,12 @@ def add_to_cleanup(monitor_task):
         with suppress(Exception):
             # There was no delete task for this unit or the unit may already have been deleted.
             # Also we can never be sure which one is the right ApiException to catch.
-            task_url = api_client.delete(pulp_href).task
+            if isinstance(api_client, ArtifactsApi):
+                task_url = pulpcore_bindings.OrphansCleanupApi.cleanup(
+                    {"orphan_protection_time": 0, "content_hrefs": pulp_href}
+                ).task
+            else:
+                task_url = api_client.delete(pulp_href).task
             delete_task_hrefs.append(task_url)
 
     for deleted_task_href in delete_task_hrefs:
