@@ -242,6 +242,7 @@ def test_content_promotion(
     assert results.error is None
 
     # Cleanup to delete the domain
+    task = file_bindings.RepositoriesFileApi.delete(repo.pulp_href).task
     monitor_task(task)
     body = {"orphan_protection_time": 0}
     task = pulpcore_bindings.OrphansCleanupApi.cleanup(body, pulp_domain=domain.name).task

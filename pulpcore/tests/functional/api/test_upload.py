@@ -72,11 +72,7 @@ def pulpcore_upload_chunks(
         return upload, artifact
 
     yield _upload_chunks
-    for href in artifacts:
-        try:
-            pulpcore_bindings.ArtifactsApi.delete(href)
-        except ApiException:
-            pass
+    monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
 
 
 @pytest.mark.parallel
