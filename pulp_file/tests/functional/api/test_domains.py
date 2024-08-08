@@ -65,6 +65,7 @@ def test_object_creation(
 
 @pytest.mark.parallel
 def test_artifact_upload(
+    allow_admin_destroy_artifact,
     pulpcore_bindings,
     gen_object_with_cleanup,
     random_artifact_factory,
@@ -127,10 +128,9 @@ def test_artifact_upload(
     assert "default/api/v3/" in dup_artifact.pulp_href
     assert dup_artifact.sha256 == second_artifact.sha256
 
-    # Delete the artifacts so domain can be deleted
-    body = {"orphan_protection_time": 0, "content_hrefs": second_artifact_href}
-    task = pulpcore_bindings.OrphansCleanupApi.cleanup(body, pulp_domain=domain.name).task
-    monitor_task(task)
+    # Delete second artifact so domain can be deleted
+    with allow_admin_destroy_artifact():
+        pulpcore_bindings.ArtifactsApi.delete(second_artifact_href)
 
 
 @pytest.mark.parallel

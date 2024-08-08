@@ -22,7 +22,7 @@ def pulpcore_random_file(tmp_path):
 
 
 @pytest.fixture
-def upload_valid_attrs(monitor_task, pulpcore_bindings):
+def upload_valid_attrs(allow_admin_destroy_artifact):
     def _upload_valid_attrs(artifact_api, file, data):
         """Upload a file with the given attributes."""
         artifact = artifact_api.create(file, **data)
@@ -34,8 +34,8 @@ def upload_valid_attrs(monitor_task, pulpcore_bindings):
         for key, val in artifact.to_dict().items():
             assert getattr(read_artifact, key) == val
         # Delete the Artifact
-        body = {"orphan_protection_time": 0, "content_hrefs": read_artifact.pulp_href}
-        monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup(body).task)
+        with allow_admin_destroy_artifact():
+            artifact_api.delete(read_artifact.pulp_href)
         with pytest.raises(ApiException) as e:
             artifact_api.read(read_artifact.pulp_href)
         assert e.value.status == 404
@@ -148,7 +148,9 @@ def test_upload_mixed_attrs(pulpcore_bindings, pulpcore_random_file):
 
 
 @pytest.mark.parallel
-def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user, monitor_task):
+def test_delete_artifact(
+    pulpcore_bindings, pulpcore_random_file, gen_user, allow_admin_destroy_artifact
+):
     """Delete an artifact, it is removed from the filesystem."""
     if settings.DEFAULT_FILE_STORAGE != "pulpcore.app.models.storage.FileSystem":
         pytest.skip("this test only works for filesystem storage")
@@ -170,9 +172,9 @@ def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user, moni
         pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
     assert e.value.status == 403
 
-    # remove artifact through orphan cleanup
-    body = {"orphan_protection_time": 0, "content_hrefs": artifact.pulp_href}
-    monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup(body).task)
+    # relax the permissions and remove the artifact
+    with allow_admin_destroy_artifact():
+        pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
     file_exists = os.path.exists(path_to_file)
     assert not file_exists
 
