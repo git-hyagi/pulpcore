@@ -45,7 +45,6 @@ def pulpcore_upload_chunks(
     pulpcore_bindings,
     gen_object_with_cleanup,
     monitor_task,
-    allow_admin_destroy_artifact,
 ):
     """Upload file in chunks."""
     artifacts = []
@@ -73,12 +72,6 @@ def pulpcore_upload_chunks(
         return upload, artifact
 
     yield _upload_chunks
-    for href in artifacts:
-        try:
-            with allow_admin_destroy_artifact():
-                pulpcore_bindings.ArtifactsApi.delete(href)
-        except ApiException:
-            pass
 
 
 @pytest.mark.parallel
