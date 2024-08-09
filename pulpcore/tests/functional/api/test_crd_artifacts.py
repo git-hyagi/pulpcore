@@ -184,8 +184,8 @@ def test_delete_artifact(
     assert e.value.status == 403
 
     # remove using orphan cleanup should work
-    body = {"orphan_protection_time": 0}
-    task = pulpcore_bindings.OrphansCleanupApi.cleanup(body, **data).task
+    data["orphan_protection_time"] = 0
+    task = pulpcore_bindings.OrphansCleanupApi.cleanup(data).task
     monitor_task(task)
     file_exists = os.path.exists(path_to_file)
     assert not file_exists

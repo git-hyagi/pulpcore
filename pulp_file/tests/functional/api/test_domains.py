@@ -128,8 +128,8 @@ def test_artifact_upload(
     assert dup_artifact.sha256 == second_artifact.sha256
 
     # Delete second artifact so domain can be deleted
-    body = {"orphan_protection_time": 0}
-    task = pulpcore_bindings.OrphansCleanupApi.cleanup(body, pulp_domain=domain.name).task
+    body = {"orphan_protection_time": 0, "pulp_domain": "default"}
+    task = pulpcore_bindings.OrphansCleanupApi.cleanup(body).task
     monitor_task(task)
 
 
