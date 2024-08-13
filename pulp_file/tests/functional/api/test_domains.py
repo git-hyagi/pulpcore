@@ -127,11 +127,6 @@ def test_artifact_upload(
     assert "default/api/v3/" in dup_artifact.pulp_href
     assert dup_artifact.sha256 == second_artifact.sha256
 
-    # Delete second artifact so domain can be deleted
-    body = {"orphan_protection_time": 0, "pulp_domain": "default"}
-    task = pulpcore_bindings.OrphansCleanupApi.cleanup(body).task
-    monitor_task(task)
-
 
 @pytest.mark.parallel
 def test_content_upload(

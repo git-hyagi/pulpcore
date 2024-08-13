@@ -21,32 +21,19 @@ def pulpcore_random_file(tmp_path):
     return {"name": name, "size": 1024, "digest": digest}
 
 
-@pytest.fixture
-def upload_valid_attrs(monitor_task, pulpcore_bindings, pulp_domain_enabled):
-    def _upload_valid_attrs(file, data):
-        """Upload a file with the given attributes."""
-        if pulp_domain_enabled:
-            data["pulp_domain"] = "default"
-        artifact = pulpcore_bindings.ArtifactsApi.create(file, **data)
-        # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
-        assert artifact.md5 is None, "MD5 {}".format(artifact.md5)
-        read_artifact = pulpcore_bindings.ArtifactsApi.read(artifact.pulp_href)
-        # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
-        assert read_artifact.md5 is None
-        for key, val in artifact.to_dict().items():
-            assert getattr(read_artifact, key) == val
-        body = {"orphan_protection_time": 0}
-        if pulp_domain_enabled:
-            body["pulp_domain"] = "default"
-        monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup(body).task)
-        with pytest.raises(ApiException) as e:
-            pulpcore_bindings.ArtifactsApi.read(read_artifact.pulp_href)
-        assert e.value.status == 404
-
-    return _upload_valid_attrs
+def _do_upload_valid_attrs(artifact_api, file, data):
+    """Upload a file with the given attributes."""
+    artifact = artifact_api.create(file, **data)
+    # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
+    assert artifact.md5 is None, "MD5 {}".format(artifact.md5)
+    read_artifact = artifact_api.read(artifact.pulp_href)
+    # assumes ALLOWED_CONTENT_CHECKSUMS does NOT contain "md5"
+    assert read_artifact.md5 is None
+    for key, val in artifact.to_dict().items():
+        assert getattr(read_artifact, key) == val
 
 
-def test_upload_valid_attrs(pulpcore_random_file, upload_valid_attrs):
+def test_upload_valid_attrs(pulpcore_bindings, pulpcore_random_file, monitor_task):
     """Upload a file, and provide valid attributes.
 
     For each possible combination of ``sha256`` and ``size`` (including
@@ -62,10 +49,19 @@ def test_upload_valid_attrs(pulpcore_random_file, upload_valid_attrs):
     for i in range(len(file_attrs) + 1):
         for keys in itertools.combinations(file_attrs, i):
             data = {key: file_attrs[key] for key in keys}
-            upload_valid_attrs(pulpcore_random_file["name"], data)
+            # before running the test with another file attribute we need to first
+            # remove the previous created artifact because the file content itself
+            # will be the same (the artifact sha256 sum will not change by modifying
+            # the file attrs)
+            monitor_task(
+                pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task
+            )
+            _do_upload_valid_attrs(
+                pulpcore_bindings.ArtifactsApi, pulpcore_random_file["name"], data
+            )
 
 
-def test_upload_empty_file(delete_orphans_pre, tmp_path, upload_valid_attrs):
+def test_upload_empty_file(pulpcore_bindings, tmp_path, monitor_task):
     """Upload an empty file.
 
     For each possible combination of ``sha256`` and ``size`` (including
@@ -83,12 +79,15 @@ def test_upload_empty_file(delete_orphans_pre, tmp_path, upload_valid_attrs):
     file_attrs = {"sha256": hashlib.sha256(empty_file).hexdigest(), "size": 0}
     for i in range(len(file_attrs) + 1):
         for keys in itertools.combinations(file_attrs, i):
+            monitor_task(
+                pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task
+            )
             data = {key: file_attrs[key] for key in keys}
-            upload_valid_attrs(file, data)
+            _do_upload_valid_attrs(pulpcore_bindings.ArtifactsApi, file, data)
 
 
 @pytest.mark.parallel
-def test_upload_invalid_attrs(pulpcore_random_file, upload_invalid_attrs):
+def test_upload_invalid_attrs(pulpcore_bindings, pulpcore_random_file):
     """Upload a file, and provide invalid attributes.
 
     For each possible combination of ``sha256`` and ``size`` (except for
@@ -103,24 +102,18 @@ def test_upload_invalid_attrs(pulpcore_random_file, upload_invalid_attrs):
     for i in range(1, len(file_attrs) + 1):
         for keys in itertools.combinations(file_attrs, i):
             data = {key: file_attrs[key] for key in keys}
-            upload_invalid_attrs(pulpcore_random_file, data)
+            _do_upload_invalid_attrs(pulpcore_bindings.ArtifactsApi, pulpcore_random_file, data)
 
 
-@pytest.fixture
-def upload_invalid_attrs(pulpcore_bindings, pulp_domain_enabled):
-    def _upload_invalid_attrs(file, data):
-        """Upload a file with the given attributes."""
-        if pulp_domain_enabled:
-            data["pulp_domain"] = "default"
-        with pytest.raises(ApiException) as e:
-            pulpcore_bindings.ArtifactsApi.create(file["name"], **data)
+def _do_upload_invalid_attrs(artifact_api, file, data):
+    """Upload a file with the given attributes."""
+    with pytest.raises(ApiException) as e:
+        artifact_api.create(file["name"], **data)
 
-        assert e.value.status == 400
-        artifacts = pulpcore_bindings.ArtifactsApi.list()
-        for artifact in artifacts.results:
-            assert artifact.sha256 != file["digest"]
-
-    return _upload_invalid_attrs
+    assert e.value.status == 400
+    artifacts = artifact_api.list()
+    for artifact in artifacts.results:
+        assert artifact.sha256 != file["digest"]
 
 
 @pytest.mark.parallel
@@ -137,7 +130,7 @@ def test_upload_md5(pulpcore_bindings, pulpcore_random_file):
 
 
 @pytest.mark.parallel
-def test_upload_mixed_attrs(pulpcore_random_file, upload_invalid_attrs):
+def test_upload_mixed_attrs(pulpcore_bindings, pulpcore_random_file):
     """Upload a file, and provide both valid and invalid attributes.
 
     Do the following:
@@ -152,22 +145,16 @@ def test_upload_mixed_attrs(pulpcore_random_file, upload_invalid_attrs):
         {"sha256": str(uuid.uuid4()), "size": pulpcore_random_file["size"]},
     )
     for data in invalid_data:
-        upload_invalid_attrs(pulpcore_random_file, data)
+        _do_upload_invalid_attrs(pulpcore_bindings.ArtifactsApi, pulpcore_random_file, data)
 
 
-@pytest.mark.parallel
-def test_delete_artifact(
-    pulpcore_bindings, pulpcore_random_file, gen_user, monitor_task, pulp_domain_enabled
-):
+def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user, monitor_task):
     """Delete an artifact, it is removed from the filesystem."""
     if settings.DEFAULT_FILE_STORAGE != "pulpcore.app.models.storage.FileSystem":
         pytest.skip("this test only works for filesystem storage")
     media_root = settings.MEDIA_ROOT
 
-    data = {}
-    if pulp_domain_enabled:
-        data["pulp_domain"] = "default"
-    artifact = pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"], **data)
+    artifact = pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"])
     path_to_file = os.path.join(media_root, artifact.file)
     file_exists = os.path.exists(path_to_file)
     assert file_exists
@@ -183,9 +170,7 @@ def test_delete_artifact(
         pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
     assert e.value.status == 403
 
-    # remove using orphan cleanup should work
-    data["orphan_protection_time"] = 0
-    task = pulpcore_bindings.OrphansCleanupApi.cleanup(data).task
+    task = pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task
     monitor_task(task)
     file_exists = os.path.exists(path_to_file)
     assert not file_exists
@@ -204,10 +189,7 @@ def test_list_and_retrieve_artifact_as_a_regular_user(
     pulpcore_bindings, gen_user, pulpcore_random_file, pulp_domain_enabled
 ):
     regular_user = gen_user()
-    data = {}
-    if pulp_domain_enabled:
-        data["pulp_domain"] = "default"
-    artifact = pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"], **data)
+    artifact = pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"])
 
     # check if list is not allowed
     with regular_user, pytest.raises(ApiException) as e:
