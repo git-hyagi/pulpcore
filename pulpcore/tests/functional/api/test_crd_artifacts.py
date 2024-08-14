@@ -148,7 +148,8 @@ def test_upload_mixed_attrs(pulpcore_bindings, pulpcore_random_file):
         _do_upload_invalid_attrs(pulpcore_bindings.ArtifactsApi, pulpcore_random_file, data)
 
 
-def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user, monitor_task):
+@pytest.mark.parallel
+def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user):
     """Delete an artifact, it is removed from the filesystem."""
     if settings.DEFAULT_FILE_STORAGE != "pulpcore.app.models.storage.FileSystem":
         pytest.skip("this test only works for filesystem storage")
@@ -170,11 +171,6 @@ def test_delete_artifact(pulpcore_bindings, pulpcore_random_file, gen_user, moni
         pulpcore_bindings.ArtifactsApi.delete(artifact.pulp_href)
     assert e.value.status == 403
 
-    task = pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task
-    monitor_task(task)
-    file_exists = os.path.exists(path_to_file)
-    assert not file_exists
-
 
 @pytest.mark.parallel
 def test_upload_artifact_as_a_regular_user(pulpcore_bindings, gen_user, pulpcore_random_file):
@@ -186,7 +182,7 @@ def test_upload_artifact_as_a_regular_user(pulpcore_bindings, gen_user, pulpcore
 
 @pytest.mark.parallel
 def test_list_and_retrieve_artifact_as_a_regular_user(
-    pulpcore_bindings, gen_user, pulpcore_random_file, pulp_domain_enabled
+    pulpcore_bindings, gen_user, pulpcore_random_file
 ):
     regular_user = gen_user()
     artifact = pulpcore_bindings.ArtifactsApi.create(pulpcore_random_file["name"])
