@@ -311,7 +311,9 @@ class BaseURLField(serializers.CharField):
     """
 
     def to_representation(self, value):
-        origin = settings.CONTENT_ORIGIN.strip("/")
+        origin = "/"
+        if settings.CONTENT_ORIGIN:
+            origin = settings.CONTENT_ORIGIN.strip("/")
         prefix = settings.CONTENT_PATH_PREFIX.strip("/")
         base_path = value.base_path.strip("/")
         url = urljoin(origin, prefix + "/")
