@@ -35,8 +35,12 @@ def test_content_directory_listing(
     ]:
         file_distribution_factory(base_path=base_path + path, content_guard=content_guard)
 
+    content_origin = pulp_status.content_settings.content_origin
+    if not content_origin:
+        content_origin = "https://pulp"
+        #content_origin = "http://localhost:5001"
     base_url = urljoin(
-        pulp_status.content_settings.content_origin,
+        content_origin,
         pulp_status.content_settings.content_path_prefix,
     )
     if pulp_settings.DOMAIN_ENABLED:
@@ -58,7 +62,7 @@ def test_content_directory_listing(
 
     # Assert that not using a trailing slash on the root returns a 301
     base_url = urljoin(
-        pulp_status.content_settings.content_origin,
+        content_origin,
         pulp_status.content_settings.content_path_prefix,
     )
     if pulp_settings.DOMAIN_ENABLED:
