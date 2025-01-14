@@ -69,7 +69,15 @@ def file_distribution_factory(file_bindings, gen_object_with_cleanup):
         kwargs = {}
         if pulp_domain:
             kwargs["pulp_domain"] = pulp_domain
-        return gen_object_with_cleanup(file_bindings.DistributionsFileApi, data, **kwargs)
+        file_distribution = gen_object_with_cleanup(file_bindings.DistributionsFileApi, data, **kwargs)
+        
+        # if the base_url starts with / it means content_origin is not defined
+        if file_distribution.base_url.startswith("/"):
+            file_distribution.base_url.replace("/", "https://pulp/", 1)
+            #file_distribution.base_url="https://pulp/"
+        return file_distribution
+
+             
 
     return _file_distribution_factory
 
