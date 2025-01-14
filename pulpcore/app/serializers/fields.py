@@ -311,10 +311,9 @@ class BaseURLField(serializers.CharField):
     """
 
     def to_representation(self, value):
-        if not settings.CONTENT_ORIGIN:
-            origin = 'https://pulp/'
-            #origin = 'http://localhost:5001/'
-        else:
+        #origin = 'https://pulp/'
+        origin = '/'
+        if settings.CONTENT_ORIGIN:
             origin = settings.CONTENT_ORIGIN.strip("/")
         prefix = settings.CONTENT_PATH_PREFIX.strip("/")
         base_path = value.base_path.strip("/")

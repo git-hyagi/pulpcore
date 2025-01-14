@@ -777,7 +777,6 @@ def pulp_content_url(pulp_settings, pulp_domain_enabled):
     url = f"{pulp_settings.CONTENT_ORIGIN}{pulp_settings.CONTENT_PATH_PREFIX}"
     if not pulp_settings.CONTENT_ORIGIN:
         url = f"https://pulp{pulp_settings.CONTENT_PATH_PREFIX}"
-        #url = f"http://localhost:5001{pulp_settings.CONTENT_PATH_PREFIX}"
 
     if pulp_domain_enabled:
         url += "default/"

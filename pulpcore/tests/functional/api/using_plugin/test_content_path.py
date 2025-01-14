@@ -38,7 +38,6 @@ def test_content_directory_listing(
     content_origin = pulp_status.content_settings.content_origin
     if not content_origin:
         content_origin = "https://pulp"
-        #content_origin = "http://localhost:5001"
     base_url = urljoin(
         content_origin,
         pulp_status.content_settings.content_path_prefix,
