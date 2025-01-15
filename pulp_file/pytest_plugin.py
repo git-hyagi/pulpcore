@@ -69,14 +69,7 @@ def file_distribution_factory(bindings_cfg, file_bindings, gen_object_with_clean
         kwargs = {}
         if pulp_domain:
             kwargs["pulp_domain"] = pulp_domain
-        file_distribution = gen_object_with_cleanup(file_bindings.DistributionsFileApi, data, **kwargs)
-        
-        # if the base_url starts with / it means content_origin is not defined
-        if file_distribution.base_url.startswith("/"):
-            file_distribution.base_url.replace("/", bindings_cfg.host, 1)
-        return file_distribution
-
-             
+        return gen_object_with_cleanup(file_bindings.DistributionsFileApi, data, **kwargs)
 
     return _file_distribution_factory
 
@@ -387,3 +380,15 @@ def generate_server_and_remote(
         return server, remote
 
     yield _generate_server_and_remote
+
+
+# if content_origin == null, base_url will return the relative path and
+# we need to add the hostname to run the tests
+@pytest.fixture
+def file_distribution_base_url(bindings_cfg):
+    def _file_distribution_base_url(base_url):
+        if base_url.startswith("http"):
+            return base_url
+        return bindings_cfg.host+base_url
+    
+    return _file_distribution_base_url
