@@ -106,6 +106,7 @@ def test_remote_artifact_url_update(
 
 @pytest.mark.parallel
 def test_remote_content_changed_with_on_demand(
+    bindings_cfg,
     write_3_iso_file_fixture_data_factory,
     file_repo_with_auto_publish,
     file_remote_ssl_factory,
@@ -135,7 +136,10 @@ def test_remote_content_changed_with_on_demand(
     expected_file_list = list(get_files_in_manifest(remote.url))
     write_3_iso_file_fixture_data_factory("basic", overwrite=True)
 
-    get_url = urljoin(distribution.base_url, expected_file_list[0][0])
+    if distribution.base_url.startswith("http"):
+        get_url = urljoin(distribution.base_url, expected_file_list[0][0])
+    else:
+        get_url = urljoin(bindings_cfg.host+distribution.base_url, expected_file_list[0][0])
 
     # WHEN (first request)
     result = subprocess.run(["curl", "-v", get_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

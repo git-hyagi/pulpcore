@@ -62,7 +62,7 @@ def file_repo_with_auto_publish(file_bindings, gen_object_with_cleanup):
 
 
 @pytest.fixture(scope="class")
-def file_distribution_factory(file_bindings, gen_object_with_cleanup):
+def file_distribution_factory(bindings_cfg, file_bindings, gen_object_with_cleanup):
     def _file_distribution_factory(pulp_domain=None, **body):
         data = {"base_path": str(uuid.uuid4()), "name": str(uuid.uuid4())}
         data.update(body)
@@ -73,8 +73,7 @@ def file_distribution_factory(file_bindings, gen_object_with_cleanup):
         
         # if the base_url starts with / it means content_origin is not defined
         if file_distribution.base_url.startswith("/"):
-            file_distribution.base_url.replace("/", "https://pulp/", 1)
-            #file_distribution.base_url="https://pulp/"
+            file_distribution.base_url.replace("/", bindings_cfg.host, 1)
         return file_distribution
 
              
