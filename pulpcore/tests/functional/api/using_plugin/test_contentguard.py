@@ -248,6 +248,7 @@ def test_composite_contentguard_permissions(
     gen_user,
     gen_object_with_cleanup,
     monitor_task,
+    file_distribution_base_url,
     file_distribution_factory,
 ):
     # Create allowed-user
@@ -280,18 +281,20 @@ def test_composite_contentguard_permissions(
 
         # Create "unattached" FileDistribution
         distro = file_distribution_factory()
+        distro_base_url = file_distribution_base_url(distro.base_url)
         # attempt access to base-url, expect 404 (no content, no guards)
-        response = get_from_url(distro.base_url)
+        response = get_from_url(distro_base_url)
         assert response.status == 404
 
         # Assign CCG1, no guards
         body = PatchedfileFileDistribution(content_guard=ccg1.pulp_href)
         monitor_task(file_bindings.DistributionsFileApi.partial_update(distro.pulp_href, body).task)
         distro = file_bindings.DistributionsFileApi.read(distro.pulp_href)
+        distro_base_url = file_distribution_base_url(distro.base_url)
         assert ccg1.pulp_href == distro.content_guard
 
         # attempt access to base-url, expect 404 (no content, no guards allows)
-        response = get_from_url(distro.base_url)
+        response = get_from_url(distro_base_url)
         assert response.status == 404
 
         # update CCG with RCG
@@ -299,7 +302,7 @@ def test_composite_contentguard_permissions(
         ccg1 = pulpcore_bindings.ContentguardsCompositeApi.partial_update(ccg1.pulp_href, body)
 
         # attempt dist-access, expect 403 (1 guard, forbids)
-        response = get_from_url(distro.base_url)
+        response = get_from_url(distro_base_url)
         assert response.status == 403
 
         # Create HeaderContentGuard, update CCG with [RCG, HCG]
@@ -307,7 +310,7 @@ def test_composite_contentguard_permissions(
         pulpcore_bindings.ContentguardsCompositeApi.partial_update(ccg1.pulp_href, body)
 
         # attempt dist-access, expect 403 (2 guards, both forbid)
-        response = get_from_url(distro.base_url)
+        response = get_from_url(distro_base_url)
         assert response.status == 403
 
         # examine error-response, expect one from each guard
@@ -318,5 +321,5 @@ def test_composite_contentguard_permissions(
         # expect 404 for allowed-user (2 guards, one allows)
         header_value = b64encode(b"123456").decode("ascii")
         headers = {"x-header": header_value}
-        response = get_from_url(distro.base_url, headers=headers)
+        response = get_from_url(distro_base_url, headers=headers)
         assert response.status == 404
