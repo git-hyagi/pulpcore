@@ -73,8 +73,6 @@ class ContentSettingsSerializer(serializers.Serializer):
     content_origin = serializers.CharField(
         help_text=_("The CONTENT_ORIGIN setting for this Pulp instance"),
         allow_blank=True,
-        allow_null=True,
-        required=False,
     )
     content_path_prefix = serializers.CharField(
         help_text=_("The CONTENT_PATH_PREFIX setting for this Pulp instance"),

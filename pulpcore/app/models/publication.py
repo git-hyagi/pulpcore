@@ -728,7 +728,9 @@ class ArtifactDistribution(Distribution):
             raise RuntimeError(f"This system already has a {cls.__name__}")
 
     def artifact_url(self, artifact):
-        origin = settings.CONTENT_ORIGIN.strip("/")
+        origin = "/"
+        if settings.CONTENT_ORIGIN:
+            origin = settings.CONTENT_ORIGIN.strip("/")
         prefix = settings.CONTENT_PATH_PREFIX.strip("/")
         base_path = self.base_path.strip("/")
         if settings.DOMAIN_ENABLED:

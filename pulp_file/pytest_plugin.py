@@ -382,7 +382,7 @@ def generate_server_and_remote(
     yield _generate_server_and_remote
 
 
-# if content_origin == null, base_url will return the relative path and
+# if content_origin == "", base_url will return the relative path and
 # we need to add the hostname to run the tests
 @pytest.fixture
 def file_distribution_base_url(bindings_cfg):

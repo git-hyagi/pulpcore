@@ -262,7 +262,7 @@ ACCESS_POLICIES = {}
 
 DRF_ACCESS_POLICY = {"reusable_conditions": ["pulpcore.app.global_access_conditions"]}
 
-CONTENT_ORIGIN = None
+CONTENT_ORIGIN = ""
 CONTENT_PATH_PREFIX = "/pulp/content/"
 
 API_APP_TTL = 120  # The heartbeat is called from gunicorn notify (defaulting to 45 sec).
