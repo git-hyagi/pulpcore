@@ -91,16 +91,6 @@ class UpstreamPulpSerializer(ModelSerializer, HiddenFieldsMixin):
         read_only=True,
     )
 
-    content_origin = serializers.CharField(
-        help_text=_(
-            "Upstream server address. This field is used by downstream Pulp in case upstream Pulp"
-            "does not have content_origin set."
-        ),
-        allow_null=True,
-        allow_blank=True,
-        required=False,
-    )
-
     def validate_q_select(self, value):
         """Ensure we have a valid q_select expression."""
         from pulpcore.app.viewsets import DistributionFilter
@@ -126,5 +116,4 @@ class UpstreamPulpSerializer(ModelSerializer, HiddenFieldsMixin):
             "hidden_fields",
             "q_select",
             "last_replication",
-            "content_origin",
         )

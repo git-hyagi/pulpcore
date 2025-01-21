@@ -32,8 +32,6 @@ class UpstreamPulp(BaseModel, AutoAddObjPermsMixin):
 
     last_replication = models.DateTimeField(null=True)
 
-    content_origin = models.TextField(null=True)
-
     class Meta:
         unique_together = ("name", "pulp_domain")
         permissions = [

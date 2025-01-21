@@ -2,6 +2,7 @@ import logging
 
 from django.db.models import Model
 from django.utils.dateparse import parse_datetime
+from urllib.parse import urljoin
 
 from pulp_glue.common.context import PulpContext
 from pulpcore.tasking.tasks import dispatch
@@ -104,14 +105,7 @@ class Replicator:
             return None
         url = self.url(upstream_distribution)
         if url.startswith("/"):
-            if self.server.content_origin:
-                url = self.server.content_origin + url
-            else:
-                raise Exception(
-                    "UpstreamPulp needs to have content_origin defined because the downstream Pulp"
-                    "does not know upstream's hostname from the distribution base_url (upstream"
-                    "Pulp does not have the content_origin defined)."
-                )
+            url = urljoin(self.server.base_url, url)
 
         remote_fields_dict = {"url": url}
         remote_fields_dict.update(self.tls_settings)

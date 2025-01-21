@@ -82,11 +82,11 @@ class TestX509CertGuard:
         x509_guarded_distribution,
         parameterized_cert,
         content_path,
-        file_distribution_base_url,
+        distribution_base_url,
     ):
         cert_data, status_code = parameterized_cert
 
-        distribution_base_url = file_distribution_base_url(x509_guarded_distribution.base_url)
+        distribution_base_url = distribution_base_url(x509_guarded_distribution.base_url)
         response = requests.get(
             urljoin(distribution_base_url, content_path),
             headers=cert_data and {"X-CLIENT-CERT": cert_data},

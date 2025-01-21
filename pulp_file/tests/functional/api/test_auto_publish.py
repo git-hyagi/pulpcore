@@ -17,7 +17,7 @@ def file_repo_with_auto_publish(file_repository_factory):
 @pytest.mark.parallel
 def test_auto_publish_and_distribution(
     file_bindings,
-    file_distribution_base_url,
+    distribution_base_url,
     file_repo_with_auto_publish,
     file_remote_ssl_factory,
     basic_manifest_path,
@@ -33,7 +33,7 @@ def test_auto_publish_and_distribution(
         file_bindings.DistributionsFileApi,
         {"name": "foo", "base_path": "bar/foo", "repository": repo.pulp_href},
     )
-    distribution_base_url = file_distribution_base_url(distribution.base_url)
+    distribution_base_url = distribution_base_url(distribution.base_url)
 
     # Assert that the repository is at version 0 and that there are no publications associated with
     # this Repository and that the distribution doesn't have a publication associated with it.

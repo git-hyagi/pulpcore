@@ -34,7 +34,6 @@ def test_replication(
         "domain": source_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
     }
     upstream_pulp = gen_object_with_cleanup(
         pulpcore_bindings.UpstreamPulpsApi, upstream_pulp_body, pulp_domain=non_default_domain.name
@@ -96,7 +95,6 @@ def test_replication_idempotence(
         "domain": source_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
     }
     upstream_pulp = gen_object_with_cleanup(
         pulpcore_bindings.UpstreamPulpsApi, upstream_pulp_body, pulp_domain=replica_domain.name
@@ -132,7 +130,6 @@ def test_replication_idempotence(
         "domain": replica_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
     }
     upstream_pulp = gen_object_with_cleanup(
         pulpcore_bindings.UpstreamPulpsApi, upstream_pulp_body, pulp_domain=source_domain.name
@@ -181,7 +178,6 @@ def test_replication_with_wrong_ca_cert(
         "domain": source_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
         "ca_cert": """-----BEGIN CERTIFICATE-----
 MIIDyDCCArCgAwIBAgIJALMhZGyJtHXTMA0GCSqGSIb3DQEBCwUAMIGgMQswCQYD
 VQQGEwJTRzEUMBIGA1UECAwLTmV3IFlvcmsxFTATBgNVBAcMDERlZmF1bHQgQ2l0
@@ -258,7 +254,6 @@ def test_replication_optimization(
         "domain": source_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
     }
     upstream_pulp = gen_object_with_cleanup(
         pulpcore_bindings.UpstreamPulpsApi, upstream_pulp_body, pulp_domain=non_default_domain.name
@@ -441,7 +436,6 @@ def test_replicate_rbac(
             "domain": "default",
             "username": bindings_cfg.username,
             "password": bindings_cfg.password,
-            "content_origin": bindings_cfg.host,
         }
         upstream_pulp = gen_object_with_cleanup(
             pulpcore_bindings.UpstreamPulpsApi,
@@ -524,7 +518,6 @@ def test_replicate_with_basic_q_select(
         "domain": source_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
     }
     upstream = gen_object_with_cleanup(
         pulpcore_bindings.UpstreamPulpsApi, upstream_body, pulp_domain=dest_domain.name
@@ -583,7 +576,6 @@ def test_replicate_with_complex_q_select(
         "domain": source_domain.name,
         "username": bindings_cfg.username,
         "password": bindings_cfg.password,
-        "content_origin": bindings_cfg.host,
         "q_select": "pulp_label_select='upstream=1' OR pulp_label_select='upstream=2'",
     }
     upstream = gen_object_with_cleanup(

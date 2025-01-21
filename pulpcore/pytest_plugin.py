@@ -1215,3 +1215,15 @@ def openpgp_keyring_factory(pulpcore_bindings, gen_object_with_cleanup):
         )
 
     return _openpgp_keyring_factory
+
+
+# if content_origin == None, base_url will return the relative path and
+# we need to add the hostname to run the tests
+@pytest.fixture
+def distribution_base_url(bindings_cfg):
+    def _distribution_base_url(base_url):
+        if base_url.startswith("http"):
+            return base_url
+        return bindings_cfg.host + base_url
+
+    return _distribution_base_url

@@ -45,7 +45,7 @@ def test_download_policy(
     pulpcore_bindings,
     file_bindings,
     file_repo,
-    file_distribution_base_url,
+    distribution_base_url,
     file_remote_ssl_factory,
     range_header_manifest_path,
     gen_object_with_cleanup,
@@ -101,7 +101,7 @@ def test_download_policy(
             "repository": file_repo.pulp_href,
         },
     )
-    distribution_base_url = file_distribution_base_url(distribution.base_url)
+    distribution_base_url = distribution_base_url(distribution.base_url)
 
     # Assert that un-published content is not available
     for expected_file in expected_files:

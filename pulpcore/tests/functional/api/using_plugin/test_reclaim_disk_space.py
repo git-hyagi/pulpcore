@@ -83,7 +83,7 @@ def sync_repository_distribution(
 
 @pytest.mark.parallel
 def test_reclaim_on_demand_content(
-    file_distribution_base_url,
+    distribution_base_url,
     pulpcore_bindings,
     sync_repository_distribution,
     monitor_task,
@@ -94,7 +94,7 @@ def test_reclaim_on_demand_content(
     """
     repo, remote, distribution = sync_repository_distribution(policy="on_demand")
 
-    distribution_base_url = file_distribution_base_url(distribution.base_url)
+    distribution_base_url = distribution_base_url(distribution.base_url)
     content = get_files_in_manifest(urljoin(distribution_base_url, "PULP_MANIFEST")).pop()
     download_file(urljoin(distribution_base_url, content[0]))
 
@@ -117,7 +117,7 @@ def test_reclaim_on_demand_content(
 
 @pytest.mark.parallel
 def test_immediate_reclaim_becomes_on_demand(
-    file_distribution_base_url,
+    distribution_base_url,
     pulpcore_bindings,
     sync_repository_distribution,
     monitor_task,
@@ -128,7 +128,7 @@ def test_immediate_reclaim_becomes_on_demand(
     artifacts_before_reclaim = pulpcore_bindings.ArtifactsApi.list().count
     assert artifacts_before_reclaim > 0
 
-    distribution_base_url = file_distribution_base_url(distribution.base_url)
+    distribution_base_url = distribution_base_url(distribution.base_url)
     content = get_files_in_manifest(urljoin(distribution_base_url, "PULP_MANIFEST")).pop()
     # Populate cache
     download_file(urljoin(distribution_base_url, content[0]))

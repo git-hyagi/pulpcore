@@ -72,7 +72,7 @@ class ContentSettingsSerializer(serializers.Serializer):
 
     content_origin = serializers.CharField(
         help_text=_("The CONTENT_ORIGIN setting for this Pulp instance"),
-        allow_blank=True,
+        allow_blank=False,
         allow_null=True,
         required=False,
     )

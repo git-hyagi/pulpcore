@@ -12,7 +12,7 @@ from pulpcore.client.pulp_file import RepositorySyncURL
 @pytest.mark.parallel
 def test_content_promotion(
     file_bindings,
-    file_distribution_base_url,
+    distribution_base_url,
     file_repo_with_auto_publish,
     file_remote_ssl_factory,
     file_distribution_factory,
@@ -44,7 +44,7 @@ def test_content_promotion(
 
     for distro in [distribution1, distribution2, distribution3]:
         # Assert that all 3 distributions can be accessed
-        distro_base_url = file_distribution_base_url(distro.base_url)
+        distro_base_url = distribution_base_url(distro.base_url)
         r = get_from_url(distro_base_url)
         assert r.status == 200
         # Download one of the files from the distribution and assert it has the correct checksum

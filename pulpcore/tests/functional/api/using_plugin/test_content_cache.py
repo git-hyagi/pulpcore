@@ -19,7 +19,7 @@ def test_full_workflow(
     basic_manifest_path,
     file_remote_factory,
     file_bindings,
-    file_distribution_base_url,
+    distribution_base_url,
     file_distribution_factory,
     monitor_task,
     redis_status,
@@ -50,7 +50,7 @@ def test_full_workflow(
         monitor_task(file_bindings.PublicationsFileApi.create(body).task).created_resources[0]
     )
     distro = file_distribution_factory(repository=repo.pulp_href)
-    distro_base_url = file_distribution_base_url(distro.base_url)
+    distro_base_url = distribution_base_url(distro.base_url)
 
     # Checks responses are cached for content
     files = ["", "", "PULP_MANIFEST", "PULP_MANIFEST", "1.iso", "1.iso"]
@@ -76,7 +76,7 @@ def test_full_workflow(
 
     # Add a new distribution and check that its responses are cached separately
     distro2 = file_distribution_factory(repository=repo.pulp_href)
-    distro2_base_url = file_distribution_base_url(distro2.base_url)
+    distro2_base_url = distribution_base_url(distro2.base_url)
     url = urljoin(pulp_content_url, f"{distro2.base_path}/")
     files = ["", "", "PULP_MANIFEST", "PULP_MANIFEST", "1.iso", "1.iso"]
     for i, file in enumerate(files):

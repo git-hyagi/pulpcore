@@ -179,7 +179,7 @@ def test_content_promotion(
     file_bindings,
     basic_manifest_path,
     file_remote_factory,
-    file_distribution_base_url,
+    distribution_base_url,
     file_distribution_factory,
     gen_object_with_cleanup,
     monitor_task,
@@ -218,7 +218,7 @@ def test_content_promotion(
 
     # Distribute Task
     distro = file_distribution_factory(publication=pub.pulp_href, pulp_domain=domain.name)
-    distro_base_url = file_distribution_base_url(distro.base_url)
+    distro_base_url = distribution_base_url(distro.base_url)
 
     assert distro.publication == pub.pulp_href
     # Url structure should be host/CONTENT_ORIGIN/DOMAIN_PATH/BASE_PATH
